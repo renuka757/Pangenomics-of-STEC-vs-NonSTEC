@@ -1,1 +1,51 @@
+library(readxl)
+library(dplyr)
+
+mydata=read_excel("excelforscoary.xlsx")
+vcdbdata=read_excel("VFDB_descriptionsEcoliansshigella.xlsx")
+mydata$Gene <- ifelse(startsWith(mydata$Gene, "group"),
+                      mydata$`Non-unique Gene name`,
+                      mydata$Gene)
+match=intersect(mydata$Gene,vcdbdata$Gene_symbol)
+mydata$selected=ifelse(mydata$Gene %in% match,mydata$Gene,NA)
+
+mydata_selected=mydata[!is.na(mydata$selected),]
+
+
+selected_col=c("HC1","HC2","HC3","HC4","HC5",
+               "HS1","HS2","HS3","HS4","HS5",
+               "bc1","bc2","bc3","bc4","bc5",
+               "bs1","bs2","bs3","bs4","bs5")
+mydata_selected[selected_col]=lapply(mydata_selected[selected_col],function(x)ifelse(is.na(x),0,1))
+mydata_selected_final=mydata_selected[mydata_selected$`No. isolates` <= 12,]
+mydata
+
+listofgenes=c("eae","tir","cesT","nleF","hlyA","hlyB","espD","iucA","iucB","iucC","iucD","stxB","iutA","stxA","virB")
+mydata_special_genes <- mydata_selected_final[mydata_selected_final$Gene %in% listofgenes,]
+mydata_special_df=as.data.frame(mydata_special_genes)
+write.csv(mydata_special_df,"dfcheck.csv")
+heatmapdata=data.frame(read_excel("VRYimpgenes.xlsx"),row.names=1)
+heatmapdata=as.matrix(heatmapdata)
+library(circlize)
+annotation=mydata_special_df$Annotation
+mydata_special_df=unique(mydata_special_df)
+mydata_unique <- mydata_special_df[!duplicated(mydata_special_df$Gene), ]
+
+col_fun <- c("0" = "white", "1" = "red")
+
+library(ComplexHeatmap)
+rowanno=rowAnnotation(
+  Type=anno_text(mydata_unique$Annotation,
+  ))
+plot1=Heatmap(heatmapdata,
+              cluster_rows = TRUE,
+              row_names_side = "left",
+              row_names_gp = gpar("fontsize"=7),
+              column_title = "Human and Bovine E coli strains(STEC vs COMMENSAL)",
+              row_title="Genes",
+              name="Presence",
+              right_annotation = rowanno)
+png("heatmapofgenes.png",height=8,width=10,res=300,units = "in")
+print(plot1)
+dev.off()
 
