@@ -1,0 +1,95 @@
+library(readxl)
+library(dplyr)
+
+
+class(org.EcK12.eg.db)
+vcdbdata=read_excel("VFDB_descriptionsEcoliansshigella.xlsx")
+mydata=read_excel("excelforscoary.xlsx")
+mydata$Gene <- ifelse(startsWith(mydata$Gene, "group"),
+                      mydata$`Non-unique Gene name`,
+                      mydata$Gene)
+mydata_selected=mydata[mydata$`No. isolates`== 1,]
+stecgroups_final=mydata_selected[c(1,20,21,22,23,24,30,31,32,33,34)]
+stecgroups <- c("HS1","HS2","HS3","HS4","HS5",
+                "bs1","bs2","bs3","bs4","bs5")
+
+stecgroups_final[stecgroups] <- lapply(
+  stecgroups_final[stecgroups],
+  function(x) ifelse(is.na(x), 0, 1)
+)
+
+# Remove missing & duplicated genes
+stecgroups_final <- stecgroups_final[!is.na(stecgroups_final$Gene), ]
+stecgroups_final <- stecgroups_final[!duplicated(stecgroups_final$Gene), ]
+stecgroups_final <- as.data.frame(stecgroups_final)
+rownames(stecgroups_final) <- stecgroups_final$Gene
+
+stecgroups_final$Gene=NULL
+# Keep only genes present in at least 1 strain
+keep <- rowSums(stecgroups_final) >= 1
+stecgroups_final_final <- stecgroups_final[keep, ]
+write.csv(stecgroups_final,"stecgene.csv")
+
+stecgroups_final_final$virulance_genes=NA
+
+stecgroups_final_final$virulance_genes <- ifelse(
+  tolower(rownames(stecgroups_final_final)) %in% tolower(vcdbdata$Gene_symbol),
+  rownames(stecgroups_final_final),
+  NA
+)
+
+# Clean up rownames (remove _digit or digit at end)
+rownames_clean <- tolower(gsub("_?\\d+$", "", rownames(stecgroups_final_final)))
+
+# Clean up vcdbdata gene symbols
+vcdb_genes <- tolower(vcdbdata$Gene_symbol)
+
+# Assign virulence gene if base name matches
+stecgroups_final_final$virulance_genes <- ifelse(
+  rownames_clean %in% vcdb_genes,
+  rownames(stecgroups_final_final),  # keep original rowname with _1 etc.
+  NA
+)
+
+stecgroups_final_final$Function=NA
+stecgroups_final_final$Function[stecgroups_final_final$virulance_genes=="papA"]="P fimbriae adhesin subunit (urinary track)"
+stecgroups_final_final$Function[stecgroups_final_final$virulance_genes=="virB4"]="VirB – activates horizontally acquired virulence genes"
+write.csv(stecgroups_final_final,"stecgroupsfinal.csv")
+
+
+mystecdata=data.frame(read_excel("stecgroupsfinal_updated.xlsx"),row.names = 1)
+rownames(mystecdata)=make.unique(mystecdata$Function)
+
+mystecdatafinal=as.data.frame(mystecdatafinal)
+
+mystecdatafinal=mystecdata[,1:10]
+
+
+library(ComplexHeatmap)
+
+
+labels <- mystecdata$Function
+labels[is.na(labels) | labels == ""] <- "" 
+
+labels[is.na(labels)] <- ""   # turn NA into empty string
+
+
+labels[labels == "NA"] <- "" 
+
+row_ha = rowAnnotation(Function = anno_text(labels,
+                                            gp = gpar(fontsize = 7,fontface="bold"),
+                                            just = "left",  # align text
+                                            location = 0.01)) # middle of row
+
+plot=Heatmap(mystecdatafinal,
+        show_row_names = FALSE,
+        right_annotation =row_ha,
+        row_names_gp = gpar(fontsize=4),
+        row_labels = mystecdata$Function,
+        row_title = "Accessory Genes",
+        column_title = "STEC E coli strain Samples",
+        name="Presence")
+png("ACCESORY_Ecoli strain.png",height=8,width=15,units="in",res=300)
+print(plot)
+dev.off()
+
