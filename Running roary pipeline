@@ -1,0 +1,33 @@
+ prokka --outdir prokka 10R.fna --prefix 10R --locustag 10R --genus  Escherichia --species coli
+ prokka --outdir prokka2 A24.fna --prefix A24R --locustag A24 --genus  Escherichia --species coli
+ prokka --outdir prokka3 A37.fna --prefix A37 --locustag A37 --genus  Escherichia --species coli
+ prokka --outdir prokka4 JB2.fna --prefix JB2 --locustag JB2 --genus  Escherichia --species coli
+ prokka --outdir prokka5 ECCNB12-2.fna --prefix ECCNB12-2 --locustag ECCNB12-2 --genus  Escherichia --species coli
+
+  prokka --outdir prokka1 10153.fna --prefix 10153 --locustag 10153 --genus  Escherichia --species coli
+  prokka --outdir prokka2 12689.fna --prefix 12689 -locustag 12689 --genus  Escherichia --species coli
+  prokka --outdir prokka3 98E11.fna --prefix 98E11  -locustag 98E11 --genus  Escherichia --species coli
+  prokka --outdir prokka4 6817.fna  --prefix 6817  -locustag 6817 --genus  Escherichia --species coli
+  prokka --outdir prokka5 EH031.fna --prefix EH031  -locustag EH031 --genus  Escherichia --species coli
+
+prokka --outdir prokka1 130.fna --prefix 130  -locustag 130 --genus  Escherichia --species coli
+prokka --outdir prokka2 7_11_88A.fna --prefix 7_11_88A  -locustag 7_11_88A --genus  Escherichia --species coli
+prokka --outdir prokka3 E2.fna --prefix E2  -locustag E2 --genus  Escherichia --species coli
+prokka --outdir prokka4 TF5.fna --prefix TF5  -locustag TF5 --genus  Escherichia --species coli
+prokka --outdir prokka5 UTAK-1.fna  --prefix UTAK-1 -locustag UTAK-1 --genus  Escherichia --species coli
+
+prokka --outdir prokka1 B1.fna --prefix B1 -locustag B1 --genus  Escherichia --species coli
+prokka --outdir prokka2 CFS3313.fna --prefix CFS3313 -locustag CFS3313 --genus  Escherichia --species coli
+prokka --outdir prokka3 EP91A.fna --prefix EP91A -locustag EP91A --genus  Escherichia --species coli
+
+
+
+#We give all gff files to roary 
+ roary -f roaryout -e --mafft -p 4 GFF/*.gff
+
+wget https://raw.githubusercontent.com/sanger-pathogens/Roary/refs/heads/master/contrib/roary_plots/roary_plots.py
+
+ python roary_plots.py roaryout/accessory_binary_genes.fa.newick roaryout/gene_presence_absence.csv
+
+FastTree -nt roaryout/core_gene_alignment.aln > my_tree.tre
+ python roary_plots.py --labels --format pdf my_tree.tre roaryout/gene_presence_absence.csv
