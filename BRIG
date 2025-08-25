@@ -1,0 +1,9 @@
+mkdir BRIG_input
+cp reference.fna BRIG_input/
+cp *.fna BRIG_input/
+
+wget https://sourceforge.net/projects/brig/files/latest/download -O BRIG.zip
+unzip BRIG.zip
+cd BRIG
+
+java -jar BRIG.jar
